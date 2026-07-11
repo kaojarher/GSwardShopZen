@@ -1,0 +1,1592 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>凡人修仙路：靈脈防線 ⚔️🛡️</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* 消除選取與滾動條以優化手機體驗 */
+        body {
+            user-select: none;
+            -webkit-user-select: none;
+            touch-action: manipulation;
+        }
+        /* 自訂霓虹與格線陰影 */
+        .neon-border {
+            box-shadow: 0 0 10px rgba(168, 85, 247, 0.4);
+        }
+        .grid-cell-active {
+            box-shadow: inset 0 0 8px rgba(34, 197, 94, 0.5);
+        }
+        /* 旋轉動畫 */
+        @keyframes pulse-slow {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+        }
+        .animate-pulse-slow {
+            animation: pulse-slow 2s infinite;
+        }
+    </style>
+</head>
+<body class="bg-slate-950 text-white min-h-screen flex flex-col justify-between overflow-x-hidden font-sans">
+
+    <!-- 頂部導航/狀態欄 -->
+    <header class="bg-slate-900 border-b border-slate-800 p-3 sticky top-0 z-50">
+        <div class="max-w-md mx-auto flex justify-between items-center">
+            <div class="flex items-center space-x-2">
+                <span class="text-2xl">⚔️</span>
+                <div>
+                    <h1 class="text-sm font-black tracking-wider text-purple-400">凡人修仙路</h1>
+                    <p class="text-[10px] text-slate-400">森林秘境渡劫 & 📜劍訣秘技 v4.0</p>
+                </div>
+            </div>
+            <!-- 資源顯示 -->
+            <div class="flex space-x-3 text-xs">
+                <div class="bg-slate-950 px-2 py-1 rounded-full border border-slate-700 flex items-center space-x-1">
+                    <span>🪙</span>
+                    <span id="gold-display" class="font-bold text-yellow-400">150</span>
+                </div>
+                <div class="bg-slate-950 px-2 py-1 rounded-full border border-slate-700 flex items-center space-x-1">
+                    <span>💎</span>
+                    <span id="gem-display" class="font-bold text-cyan-400">5</span>
+                </div>
+                <div class="bg-purple-950 px-2 py-1 rounded-full border border-purple-800 flex items-center space-x-1">
+                    <span class="animate-pulse">👾</span>
+                    <span id="wave-display" class="font-black text-purple-300">渡劫 第1重</span>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- 主要遊戲區域：限制最大寬度以維持行動端極致體驗 -->
+    <main class="flex-1 max-w-md w-full mx-auto flex flex-col justify-start p-2 space-y-2 pb-24">
+        
+        <!-- 戰鬥區域 (Canvas) -->
+        <div class="relative w-full bg-slate-900 rounded-xl overflow-hidden border-2 border-slate-800 shadow-lg">
+            <!-- 進度條 -->
+            <div class="absolute top-2 left-1/2 -translate-x-1/2 w-3/4 bg-slate-950/80 px-3 py-1 rounded-full border border-slate-700 flex items-center justify-between z-10 text-[10px]">
+                <span class="text-slate-400">渡劫進度</span>
+                <div class="w-1/2 bg-slate-800 h-2 rounded-full overflow-hidden mx-2">
+                    <div id="wave-progress" class="bg-purple-500 h-full transition-all duration-300" style="width: 0%"></div>
+                </div>
+                <span id="wave-progress-text" class="text-purple-400 font-bold">0/10</span>
+            </div>
+            
+            <!-- Canvas 渲染 2.5D 水平物理戰鬥 -->
+            <canvas id="battle-canvas" class="w-full h-52 block bg-gradient-to-b from-sky-400 to-sky-200"></canvas>
+            
+            <!-- 音效開關 -->
+            <button id="sound-toggle" class="absolute bottom-2 right-2 bg-slate-950/80 p-1.5 rounded-full border border-slate-700 hover:bg-slate-800 text-xs z-10">
+                🔊
+            </button>
+        </div>
+
+        <!-- 秘技悟通啟用橫幅 -->
+        <div id="active-set-banner" class="hidden text-center py-1.5 px-3 bg-gradient-to-r from-amber-950 via-orange-950 to-amber-950 border border-amber-800 rounded-lg text-[10px] text-amber-300 font-bold animate-pulse">
+            📜 已悟通秘技：<span id="active-set-name" class="text-yellow-300">無</span>
+        </div>
+
+        <!-- 修士屬性法鑑 -->
+        <div class="grid grid-cols-4 gap-1.5 text-center text-[11px] bg-slate-900/60 p-2 rounded-lg border border-slate-800/80">
+            <div class="bg-slate-950/40 p-1 rounded">
+                <span class="text-slate-400">❤️ 道行</span>
+                <div id="stat-hp" class="font-bold text-emerald-400">200</div>
+            </div>
+            <div class="bg-slate-950/40 p-1 rounded">
+                <span class="text-slate-400">⚔️ 劍氣</span>
+                <div id="stat-atk" class="font-bold text-orange-400">10</div>
+            </div>
+            <div class="bg-slate-950/40 p-1 rounded">
+                <span class="text-slate-400">🔥 真元</span>
+                <div id="stat-magic" class="font-bold text-indigo-400">0</div>
+            </div>
+            <div class="bg-slate-950/40 p-1 rounded">
+                <span class="text-slate-400">💨 身法</span>
+                <div id="stat-aspd" class="font-bold text-amber-400">1.0x</div>
+            </div>
+        </div>
+
+        <!-- 📜 秘技總覽 -->
+        <div class="bg-slate-900 rounded-xl p-3 border-2 border-amber-900/60 flex flex-col space-y-2 relative overflow-hidden shadow-md">
+            <!-- 發光霓虹裝飾 -->
+            <div class="absolute -right-8 -top-8 w-16 h-16 bg-amber-600/10 blur-xl rounded-full"></div>
+
+            <div class="flex justify-between items-center">
+                <span class="text-xs font-black text-amber-300 flex items-center space-x-1">
+                    <span>📜</span><span>秘技總覽</span>
+                </span>
+                <span class="text-[9px] bg-amber-950 text-amber-400 border border-amber-800 px-2 py-0.5 rounded-full font-mono font-bold tracking-wider">
+                    劍訣秘法
+                </span>
+            </div>
+            <p class="text-[10px] text-slate-400 leading-relaxed">
+                將對應法寶湊齊放入儲物袋，即可自動悟通秘技加成，效果會持續生效，直到卸下任一件法寶為止。
+            </p>
+
+            <div id="set-bonus-list" class="space-y-1.5">
+                <!-- JS 動態渲染秘技清單 -->
+            </div>
+        </div>
+
+        <!-- 放置格線儲物袋區域 -->
+        <div class="bg-slate-900 rounded-xl p-3 border-2 border-slate-800/80 relative flex flex-col">
+            <div class="flex justify-between items-center mb-2">
+                <span class="text-xs font-bold text-slate-300 flex items-center">
+                    🎒 乾坤儲物袋 <span class="text-[10px] text-slate-500 ml-1">(點擊選定法寶放置)</span>
+                </span>
+                <div class="flex space-x-1">
+                    <button id="export-save-btn" class="text-[10px] bg-cyan-950/80 hover:bg-cyan-900 text-cyan-300 px-2 py-1 rounded border border-cyan-800" title="匯出目前進度為 JSON 檔案">
+                        💾 匯出
+                    </button>
+                    <button id="import-save-btn" class="text-[10px] bg-emerald-950/80 hover:bg-emerald-900 text-emerald-300 px-2 py-1 rounded border border-emerald-800" title="從 JSON 檔案匯入進度">
+                        📂 匯入
+                    </button>
+                    <input type="file" id="import-file-input" accept=".json,application/json" class="hidden">
+                    <button id="clear-bag-btn" class="text-[10px] bg-rose-950/80 hover:bg-rose-900 text-rose-300 px-2 py-1 rounded border border-rose-800">
+                        🗑️ 清空儲物袋
+                    </button>
+                </div>
+            </div>
+
+            <!-- 儲物袋格線 (8 x 5) -->
+            <div id="backpack-grid-container" class="relative bg-slate-950 rounded-lg p-2 border border-slate-800 grid grid-cols-8 gap-1.5 aspect-[8/5] w-full">
+                <!-- JS 動態生成格子 -->
+            </div>
+        </div>
+
+        <!-- 擺放控制與提示區域 -->
+        <div id="placement-control-panel" class="hidden bg-purple-950/40 border border-purple-800/60 p-2 rounded-lg flex justify-between items-center">
+            <div class="flex items-center space-x-2">
+                <div id="pending-emoji" class="text-2xl p-1 bg-purple-950 rounded border border-purple-700">⚔️</div>
+                <div class="text-[11px]">
+                    <p class="font-bold text-purple-300" id="pending-name">青鋒雙劍</p>
+                    <p class="text-slate-400" id="pending-desc">雙擊或拖曳至儲物袋放上</p>
+                </div>
+            </div>
+            <div class="flex space-x-1.5">
+                <button id="rotate-btn" class="bg-purple-600 hover:bg-purple-500 text-white font-bold px-3 py-1.5 rounded text-xs flex items-center space-x-1">
+                    <span>🔄 旋轉</span>
+                </button>
+                <button id="cancel-placement-btn" class="bg-slate-800 hover:bg-slate-700 text-slate-300 px-3 py-1.5 rounded text-xs">
+                    取消
+                </button>
+            </div>
+        </div>
+
+        <!-- 坊市法寶閣 -->
+        <div class="bg-slate-900 rounded-xl p-3 border-2 border-slate-800/80 flex flex-col space-y-2">
+            <div class="flex justify-between items-center">
+                <span class="text-xs font-bold text-slate-300">🛒 坊市法寶閣</span>
+                <button id="refresh-shop-btn" class="text-[10px] bg-amber-950/80 hover:bg-amber-900 text-amber-300 px-2.5 py-1 rounded border border-amber-800 flex items-center space-x-1">
+                    <span>🔄 刷新坊市 (🪙10)</span>
+                </button>
+            </div>
+            
+            <!-- 商品卡片列表 -->
+            <div id="shop-items-container" class="grid grid-cols-3 gap-2">
+                <!-- JS 動態渲染坊市法寶 -->
+            </div>
+        </div>
+
+    </main>
+
+    <!-- 頁尾常駐資訊 / 操作指引 -->
+    <footer class="bg-slate-950/90 border-t border-slate-800 py-2.5 fixed bottom-0 left-0 right-0 z-40 backdrop-blur-md">
+        <div class="max-w-md mx-auto px-4 flex justify-between items-center text-[11px] text-slate-400">
+            <div>
+                💡 點擊坊市購買法寶 &rarr; 點擊儲物袋格子放入 &rarr; 妖獸靠近自動出手！
+            </div>
+            <div class="text-right text-purple-400 font-bold">
+                SSR 上古法寶免費領 🎁
+            </div>
+        </div>
+    </footer>
+
+    <!-- 遊戲過關/失敗自訂彈窗 (取代 alert) -->
+    <div id="custom-modal" class="hidden fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4">
+        <div class="bg-slate-900 border-2 border-purple-500 rounded-2xl max-w-xs w-full p-6 text-center shadow-2xl">
+            <div id="modal-icon" class="text-5xl mb-3">🏆</div>
+            <h3 id="modal-title" class="text-lg font-black text-white mb-2">恭喜渡劫</h3>
+            <p id="modal-desc" class="text-xs text-slate-400 mb-6">您成功渡過了這一重天劫！</p>
+            <button id="modal-btn" class="w-full bg-purple-600 hover:bg-purple-500 text-white font-bold py-2 rounded-xl text-sm transition">
+                繼續下一劫
+            </button>
+        </div>
+    </div>
+
+    <script>
+        // --- 1. 音效引擎 (Web Audio API) ---
+        class SoundEngine {
+            constructor() {
+                this.ctx = null;
+                this.enabled = true;
+            }
+            init() {
+                if (!this.ctx) {
+                    this.ctx = new (window.AudioContext || window.webkitAudioContext)();
+                }
+            }
+            playTone(freq, type, duration) {
+                if (!this.enabled) return;
+                this.init();
+                try {
+                    let osc = this.ctx.createOscillator();
+                    let gain = this.ctx.createGain();
+                    osc.connect(gain);
+                    gain.connect(this.ctx.destination);
+                    osc.type = type;
+                    osc.frequency.setValueAtTime(freq, this.ctx.currentTime);
+                    gain.gain.setValueAtTime(0.08, this.ctx.currentTime);
+                    gain.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + duration);
+                    osc.start();
+                    osc.stop(this.ctx.currentTime + duration);
+                } catch(e) {}
+            }
+            shoot() { this.playTone(587.33, 'triangle', 0.12); } // D5 快斬
+            magic() { this.playTone(880, 'sine', 0.22); } // A5 魔法能量波
+            hit() { this.playTone(180, 'sawtooth', 0.08); } // 低重音打擊
+            coin() { 
+                this.playTone(987.77, 'sine', 0.08); // B5
+                setTimeout(() => this.playTone(1318.51, 'sine', 0.15), 60); // E6
+            }
+            buy() { this.playTone(523.25, 'sine', 0.1); } // C5
+            defeat() { this.playTone(120, 'sawtooth', 0.5); } // 陣亡低鳴
+        }
+        const sfx = new SoundEngine();
+
+        // --- 2. 遊戲資料與配置 ---
+        const GRID_ROWS = 5;
+        const GRID_COLS = 8;
+        
+        const EQUIPMENT_LIBRARY = {
+            sword: {
+                id: 'sword', name: '青鋒雙劍', emoji: '⚔️', setId: 'wind',
+                width: 2, height: 1, color: 'bg-gradient-to-r from-orange-500 to-red-500',
+                atk: 18, hp: 0, magic: 0, aspd: 0.15, cost: 35,
+                desc: '劍氣+18 / 身法+15%'
+            },
+            staff: {
+                id: 'staff', name: '紫金葫蘆', emoji: '🔮', setId: 'elemental',
+                width: 1, height: 3, color: 'bg-gradient-to-b from-violet-600 to-indigo-800',
+                atk: 5, hp: 0, magic: 35, aspd: 0.05, cost: 50,
+                desc: '真元+35 / 劍氣+5'
+            },
+            armor: {
+                id: 'armor', name: '玄鐵護甲', emoji: '🛡️', setId: 'bastion',
+                width: 2, height: 2, color: 'bg-gradient-to-br from-emerald-500 to-teal-700',
+                atk: 0, hp: 150, magic: 0, aspd: -0.05, cost: 45,
+                desc: '道行+150 / 身法-5%'
+            },
+            battery: {
+                id: 'battery', name: '聚靈晶石', emoji: '🔋', setId: 'wind',
+                width: 1, height: 1, color: 'bg-gradient-to-r from-yellow-500 to-amber-500',
+                atk: 2, hp: 10, magic: 5, aspd: 0.20, cost: 25,
+                desc: '疾如流光！身法+20%'
+            },
+            core: {
+                id: 'core', name: '本命法陣', emoji: '⚙️', setId: 'elemental',
+                width: 2, height: 2, color: 'bg-gradient-to-tr from-cyan-500 to-blue-600',
+                atk: 10, hp: 80, magic: 20, aspd: 0.10, cost: 65,
+                desc: '五行調和！全面提升'
+            },
+            chest: {
+                id: 'chest', name: '納靈儲物袋', emoji: '📦', setId: 'bastion',
+                width: 1, height: 2, color: 'bg-gradient-to-b from-amber-600 to-yellow-800',
+                atk: 1, hp: 20, magic: 0, aspd: 0.0, cost: 30,
+                desc: '靈石增幅！額外加成'
+            }
+        };
+
+        // 秘技資料庫：集齊 members 內全部法寶（各一件）即可自動悟通秘技加成
+        const SET_LIBRARY = {
+            wind: {
+                name: '疾風劍訣',
+                icon: '💨',
+                members: ['sword', 'battery'],
+                bonus: { aspd: 0.10 }
+            },
+            elemental: {
+                name: '五行合一訣',
+                icon: '🌌',
+                members: ['staff', 'core'],
+                bonus: { magic: 15 }
+            },
+            bastion: {
+                name: '金剛護體訣',
+                icon: '🏰',
+                members: ['armor', 'chest'],
+                bonus: { hp: 80 }
+            }
+        };
+
+        function formatBonusText(bonus) {
+            const parts = [];
+            if (bonus.atk) parts.push(`劍氣+${bonus.atk}`);
+            if (bonus.magic) parts.push(`真元+${bonus.magic}`);
+            if (bonus.hp) parts.push(`道行+${bonus.hp}`);
+            if (bonus.aspd) parts.push(`身法+${Math.round(bonus.aspd * 100)}%`);
+            return parts.join(' / ');
+        }
+
+        // --- 3.1 圖示總表 (Sprite Sheet) ---
+        // 使用者提供的 AI 生成圖示總表，與本 HTML 放在「相同路徑」即可正確讀取。
+        const SPRITE_SHEET_SRC = 'sprite-icons.jpg';
+        const SPRITE_SHEET_W = 572;
+        const SPRITE_SHEET_H = 1024;
+
+        // 各圖示在總表原圖中的實際像素座標 { x, y, w, h }（左上角原點）
+        const SPRITE_MAP = {
+            sword:   { x: 28,  y: 63,  w: 138, h: 133 }, // 青鋒雙劍
+            crystal: { x: 216, y: 63,  w: 139, h: 133 }, // 聚靈晶石
+            gourd:   { x: 405, y: 63,  w: 138, h: 133 }, // 紫金葫蘆
+            array:   { x: 28,  y: 240, w: 138, h: 128 }, // 本命法陣
+            armor:   { x: 216, y: 240, w: 139, h: 128 }, // 玄鐵護甲
+            pouch:   { x: 405, y: 240, w: 138, h: 128 }, // 納靈儲物袋
+            mob_alien:    { x: 28,  y: 476, w: 138, h: 133 }, // 異形怪
+            mob_spider:   { x: 216, y: 476, w: 139, h: 133 }, // 巨蛛
+            mob_oni:      { x: 405, y: 476, w: 138, h: 133 }, // 赤鬼
+            mob_scorpion: { x: 28,  y: 655, w: 138, h: 130 }, // 毒蠍
+            mob_dragon:   { x: 216, y: 655, w: 139, h: 130 }, // 幼龍
+            mob_ghost:    { x: 405, y: 655, w: 138, h: 130 }, // 幽魂
+            hero: { x: 170, y: 838, w: 110, h: 139 }, // 主角
+            boss: { x: 290, y: 838, w: 120, h: 139 }  // 妖王
+        };
+
+        // 裝備 libraryId → 圖示總表 key 對照（法寶）
+        const LIBRARY_ID_TO_SPRITE = {
+            sword: 'sword', staff: 'gourd', armor: 'armor',
+            battery: 'crystal', core: 'array', chest: 'pouch'
+        };
+
+        // 一般妖獸 emoji → 圖示總表 key 對照（與 spawnMonster 的隨機順序一致）
+        const MOB_EMOJI_TO_SPRITE = {
+            '👾': 'mob_alien', '🕷️': 'mob_spider', '👹': 'mob_oni',
+            '🦂': 'mob_scorpion', '🐉': 'mob_dragon', '👻': 'mob_ghost'
+        };
+
+        // 供 DOM／CSS 使用：計算對應圖示在總表中的百分比式 background-position / background-size。
+        // 採用百分比而非固定像素，確保容器在響應式版面（如背包格線隨螢幕縮放）下仍能精準對齊裁切位置。
+        function getSpriteBackgroundStyle(spriteKey) {
+            const s = SPRITE_MAP[spriteKey];
+            if (!s) return '';
+            const bgSizeX = (SPRITE_SHEET_W / s.w) * 100;
+            const bgSizeY = (SPRITE_SHEET_H / s.h) * 100;
+            const posX = SPRITE_SHEET_W === s.w ? 0 : (s.x / (SPRITE_SHEET_W - s.w)) * 100;
+            const posY = SPRITE_SHEET_H === s.h ? 0 : (s.y / (SPRITE_SHEET_H - s.h)) * 100;
+            return `background-image:url('${SPRITE_SHEET_SRC}');background-size:${bgSizeX.toFixed(3)}% ${bgSizeY.toFixed(3)}%;background-position:${posX.toFixed(3)}% ${posY.toFixed(3)}%;background-repeat:no-repeat;`;
+        }
+
+        // 供 DOM 使用：依 libraryId 產生法寶圖示的 HTML（優先使用圖示總表，無對應圖片則回退 emoji）
+        // boxSizePx 僅用於設定容器的固定顯示尺寸，裁切位置本身已採百分比運算不受影響
+        function renderIconHTML(libraryId, emoji, boxSizePx, extraClass) {
+            const spriteKey = LIBRARY_ID_TO_SPRITE[libraryId];
+            if (spriteKey) {
+                const style = getSpriteBackgroundStyle(spriteKey);
+                return `<div class="${extraClass || ''}" style="width:${boxSizePx}px;height:${boxSizePx}px;${style}"></div>`;
+            }
+            return `<span class="${extraClass || ''} flex items-center justify-center" style="width:${boxSizePx}px;height:${boxSizePx}px;font-size:${Math.round(boxSizePx * 0.7)}px;">${emoji}</span>`;
+        }
+
+        // 供背包格線使用：容器尺寸交由 CSS class（如 w-4/5 h-4/5）決定，隨格線響應式縮放
+        function renderIconHTMLResponsive(libraryId, emoji, extraClass) {
+            const spriteKey = LIBRARY_ID_TO_SPRITE[libraryId];
+            if (spriteKey) {
+                const style = getSpriteBackgroundStyle(spriteKey);
+                return `<div class="${extraClass || ''} w-4/5 h-4/5" style="${style}"></div>`;
+            }
+            return `<span class="${extraClass || ''}">${emoji}</span>`;
+        }
+
+        // 供 Canvas 使用：預先載入總表圖片，供 drawImage 直接依座標裁切繪製
+        const spriteSheetImg = new Image();
+        spriteSheetImg.src = SPRITE_SHEET_SRC;
+
+        // 遊戲核心運行狀態
+        const state = {
+            gold: 150,
+            gems: 5,
+            wave: 1,
+            monstersDefeatedThisWave: 0,
+            monstersRequiredForNextWave: 10,
+            hero: {
+                hp: 200,
+                maxHp: 200,
+                baseAtk: 10,
+                baseMagic: 0,
+                baseAspd: 1.0,
+                lastAttackTime: 0,
+                lastMagicTime: 0
+            },
+            grid: Array(GRID_ROWS).fill(null).map(() => Array(GRID_COLS).fill(null)),
+            equippedItems: [],
+            shopItems: [],
+            pendingPlacement: null,
+            // 2.5D 水平戰鬥單位與特效
+            monsters: [],
+            projectiles: [],
+            particles: [],
+            floatingTexts: []
+        };
+
+        // --- 3. DOM 節點初始化 ---
+        const goldDisplay = document.getElementById('gold-display');
+        const gemDisplay = document.getElementById('gem-display');
+        const waveDisplay = document.getElementById('wave-display');
+        const waveProgress = document.getElementById('wave-progress');
+        const waveProgressText = document.getElementById('wave-progress-text');
+        const gridContainer = document.getElementById('backpack-grid-container');
+        const shopContainer = document.getElementById('shop-items-container');
+        const placementPanel = document.getElementById('placement-control-panel');
+        const pendingEmoji = document.getElementById('pending-emoji');
+        const pendingName = document.getElementById('pending-name');
+        const pendingDesc = document.getElementById('pending-desc');
+        const rotateBtn = document.getElementById('rotate-btn');
+        const cancelPlacementBtn = document.getElementById('cancel-placement-btn');
+        const refreshShopBtn = document.getElementById('refresh-shop-btn');
+        const clearBagBtn = document.getElementById('clear-bag-btn');
+        const soundToggle = document.getElementById('sound-toggle');
+        const exportSaveBtn = document.getElementById('export-save-btn');
+        const importSaveBtn = document.getElementById('import-save-btn');
+        const importFileInput = document.getElementById('import-file-input');
+
+        const statHp = document.getElementById('stat-hp');
+        const statAtk = document.getElementById('stat-atk');
+        const statMagic = document.getElementById('stat-magic');
+        const statAspd = document.getElementById('stat-aspd');
+
+        const customModal = document.getElementById('custom-modal');
+        const modalIcon = document.getElementById('modal-icon');
+        const modalTitle = document.getElementById('modal-title');
+        const modalDesc = document.getElementById('modal-desc');
+        const modalBtn = document.getElementById('modal-btn');
+
+        // 套裝系統 DOM 節點
+        const setBonusList = document.getElementById('set-bonus-list');
+        const activeSetBanner = document.getElementById('active-set-banner');
+        const activeSetName = document.getElementById('active-set-name');
+
+        // --- 4. 儲物袋系統邏輯 (Storage Pouch Engine) ---
+        
+        function initGridDOM() {
+            gridContainer.innerHTML = '';
+            for (let r = 0; r < GRID_ROWS; r++) {
+                for (let c = 0; c < GRID_COLS; c++) {
+                    const cell = document.createElement('div');
+                    cell.className = `relative aspect-square rounded-md bg-slate-900 border border-slate-800 transition-colors duration-200 cursor-pointer flex items-center justify-center text-lg`;
+                    cell.dataset.row = r;
+                    cell.dataset.col = c;
+                    
+                    cell.addEventListener('mouseenter', () => handleCellHover(r, c, true));
+                    cell.addEventListener('mouseleave', () => handleCellHover(r, c, false));
+                    cell.addEventListener('click', () => handleCellClick(r, c));
+                    
+                    gridContainer.appendChild(cell);
+                }
+            }
+            renderEquippedItems();
+        }
+
+        function renderEquippedItems() {
+            const cells = gridContainer.children;
+            for (let i = 0; i < cells.length; i++) {
+                cells[i].className = `relative aspect-square rounded-md bg-slate-900/90 border border-slate-800 transition-colors duration-200 cursor-pointer flex items-center justify-center text-lg`;
+                cells[i].innerHTML = '';
+            }
+
+            state.equippedItems.forEach(item => {
+                const { r, c, w, h, emoji, color, instanceId, libraryId } = item;
+                for (let currR = r; currR < r + h; currR++) {
+                    for (let currC = c; currC < c + w; currC++) {
+                        const cellIndex = currR * GRID_COLS + currC;
+                        const cell = cells[cellIndex];
+                        if (cell) {
+                            cell.className = `relative aspect-square rounded-md ${color} border border-white/20 shadow-inner flex items-center justify-center text-xl cursor-pointer hover:brightness-110 transition-all duration-150`;
+                            
+                            if (currR === r && currC === c) {
+                                const iconHTML = renderIconHTMLResponsive(libraryId, emoji, 'z-10 select-none pointer-events-none drop-shadow-md animate-pulse-slow object-contain');
+                                cell.innerHTML = `
+                                    ${iconHTML}
+                                    <button onclick="unequipItem('${instanceId}'); event.stopPropagation();" class="absolute -top-1 -right-1 bg-red-600 hover:bg-red-500 border border-white/20 text-[8px] text-white w-4 h-4 rounded-full flex items-center justify-center shadow z-20">✕</button>
+                                `;
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        function handleCellHover(r, c, isHover) {
+            if (!state.pendingPlacement) return;
+            const item = state.pendingPlacement;
+            const w = item.width;
+            const h = item.height;
+            const cells = gridContainer.children;
+
+            for (let i = 0; i < cells.length; i++) {
+                cells[i].classList.remove('bg-emerald-500/30', 'bg-rose-500/30', 'border-emerald-400', 'border-rose-400');
+            }
+
+            if (!isHover) return;
+
+            const canPlace = checkFit(r, c, w, h);
+            for (let currR = r; currR < r + h; currR++) {
+                for (let currC = c; currC < c + w; currC++) {
+                    if (currR < GRID_ROWS && currC < GRID_COLS) {
+                        const idx = currR * GRID_COLS + currC;
+                        if (canPlace) {
+                            cells[idx].classList.add('bg-emerald-500/30', 'border-emerald-400');
+                        } else {
+                            cells[idx].classList.add('bg-rose-500/30', 'border-rose-400');
+                        }
+                    }
+                }
+            }
+        }
+
+        function checkFit(startRow, startCol, w, h, excludeInstanceId = null) {
+            if (startRow + h > GRID_ROWS || startCol + w > GRID_COLS) return false;
+            
+            for (let r = startRow; r < startRow + h; r++) {
+                for (let c = startCol; c < startCol + w; c++) {
+                    const occupyingItem = state.grid[r][c];
+                    if (occupyingItem !== null) {
+                        if (excludeInstanceId && occupyingItem.instanceId === excludeInstanceId) {
+                            continue;
+                        }
+                        return false;
+                    }
+                }
+            }
+            return true;
+        }
+
+        function handleCellClick(r, c) {
+            if (!state.pendingPlacement) return;
+            
+            const pending = state.pendingPlacement;
+            const w = pending.width;
+            const h = pending.height;
+
+            if (checkFit(r, c, w, h)) {
+                // 若法寶並非坊市購得，不在此重複扣除靈石/妖丹，除非它源於坊市商品
+                if (pending.isShopItem) {
+                    state.gold -= pending.cost;
+                }
+                updateResourceDisplay();
+
+                const instanceId = 'item_' + Date.now() + '_' + Math.random().toString(36).substr(2, 5);
+                const newEquipped = {
+                    instanceId: instanceId,
+                    libraryId: pending.libraryId || 'custom_forge',
+                    name: pending.name,
+                    emoji: pending.emoji,
+                    color: pending.color,
+                    r: r,
+                    c: c,
+                    w: w,
+                    h: h,
+                    atk: pending.atk,
+                    hp: pending.hp,
+                    magic: pending.magic,
+                    aspd: pending.aspd,
+                    cost: pending.cost
+                };
+
+                for (let currR = r; currR < r + h; currR++) {
+                    for (let currC = c; currC < c + w; currC++) {
+                        state.grid[currR][currC] = newEquipped;
+                    }
+                }
+
+                state.equippedItems.push(newEquipped);
+                sfx.buy();
+
+                state.pendingPlacement = null;
+                placementPanel.classList.add('hidden');
+                
+                renderEquippedItems();
+                recalculateHeroStats();
+                refreshShop();
+            } else {
+                sfx.playTone(180, 'sawtooth', 0.2);
+            }
+        }
+
+        window.unequipItem = function(instanceId) {
+            const itemIndex = state.equippedItems.findIndex(i => i.instanceId === instanceId);
+            if (itemIndex > -1) {
+                const item = state.equippedItems[itemIndex];
+                const refund = Math.floor(item.cost * 0.6);
+                state.gold += refund;
+                sfx.coin();
+
+                for (let r = item.r; r < item.r + item.h; r++) {
+                    for (let c = item.c; c < item.c + item.w; c++) {
+                        state.grid[r][c] = null;
+                    }
+                }
+                state.equippedItems.splice(itemIndex, 1);
+                
+                renderEquippedItems();
+                recalculateHeroStats();
+                updateResourceDisplay();
+                spawnFloatingText(`+🪙${refund}`, 80, canvas.height/ (2 * window.devicePixelRatio), '#eab308');
+            }
+        };
+
+        clearBagBtn.addEventListener('click', () => {
+            state.grid = Array(GRID_ROWS).fill(null).map(() => Array(GRID_COLS).fill(null));
+            state.equippedItems = [];
+            renderEquippedItems();
+            recalculateHeroStats();
+            sfx.defeat();
+        });
+
+        // --- 5. 商店與補給系統 ---
+        
+        function refreshShop() {
+            const keys = Object.keys(EQUIPMENT_LIBRARY);
+            state.shopItems = [];
+            for (let i = 0; i < 3; i++) {
+                const randomKey = keys[Math.floor(Math.random() * keys.length)];
+                state.shopItems.push({ ...EQUIPMENT_LIBRARY[randomKey] });
+            }
+            renderShop();
+        }
+
+        function renderShop() {
+            shopContainer.innerHTML = '';
+            state.shopItems.forEach((item, index) => {
+                const isAffordable = state.gold >= item.cost;
+                const sizeText = `${item.width}x${item.height}`;
+                const setDef = item.setId ? SET_LIBRARY[item.setId] : null;
+                const setTag = setDef
+                    ? `<span class="text-[8px] bg-amber-950/70 text-amber-400 border border-amber-800/60 px-1 rounded font-bold">${setDef.icon} ${setDef.name}</span>`
+                    : '';
+                
+                const card = document.createElement('div');
+                card.className = `bg-slate-950 p-2.5 rounded-xl border-2 flex flex-col justify-between transition-all duration-200 cursor-pointer ${
+                    isAffordable ? 'border-slate-800 hover:border-purple-500/60' : 'border-slate-900 opacity-60'
+                }`;
+                
+                card.innerHTML = `
+                    <div class="flex justify-between items-start">
+                        ${renderIconHTML(item.id, item.emoji, 36, 'rounded bg-slate-900 border border-slate-800')}
+                        <span class="text-[9px] bg-slate-800 text-slate-400 px-1 py-0.5 rounded font-mono">${sizeText}</span>
+                    </div>
+                    <div class="my-1.5">
+                        <h4 class="text-[11px] font-bold text-slate-200 truncate">${item.name}</h4>
+                        <p class="text-[9px] text-slate-400 line-clamp-2 leading-tight">${item.desc}</p>
+                        ${setTag ? `<div class="mt-1">${setTag}</div>` : ''}
+                    </div>
+                    <button class="w-full mt-1 py-1 px-2 rounded-lg text-[10px] font-bold transition flex items-center justify-center space-x-1 ${
+                        isAffordable ? 'bg-purple-600 hover:bg-purple-500 text-white' : 'bg-slate-800 text-slate-500 cursor-not-allowed'
+                    }">
+                        <span>🪙 ${item.cost}</span>
+                    </button>
+                `;
+
+                if (isAffordable) {
+                    card.addEventListener('click', () => {
+                        selectShopItem({ ...item, isShopItem: true });
+                    });
+                }
+                shopContainer.appendChild(card);
+            });
+        }
+
+        function selectShopItem(item) {
+            state.pendingPlacement = {
+                libraryId: item.id,
+                name: item.name,
+                emoji: item.emoji,
+                width: item.width,
+                height: item.height,
+                color: item.color,
+                atk: item.atk,
+                hp: item.hp,
+                magic: item.magic,
+                aspd: item.aspd,
+                cost: item.cost,
+                isRotated: false,
+                isShopItem: item.isShopItem || false
+            };
+            
+            placementPanel.classList.remove('hidden');
+            pendingEmoji.innerHTML = renderIconHTML(item.id, item.emoji, 32, '');
+            pendingName.textContent = item.name;
+            pendingDesc.textContent = `放置尺寸為 ${item.width}x${item.height} 的法寶`;
+
+            sfx.playTone(440, 'sine', 0.1);
+        }
+
+        rotateBtn.addEventListener('click', () => {
+            if (!state.pendingPlacement) return;
+            const temp = state.pendingPlacement.width;
+            state.pendingPlacement.width = state.pendingPlacement.height;
+            state.pendingPlacement.height = temp;
+            state.pendingPlacement.isRotated = !state.pendingPlacement.isRotated;
+
+            pendingDesc.textContent = `已旋轉！新尺寸：${state.pendingPlacement.width}x${state.pendingPlacement.height}`;
+            sfx.playTone(600, 'sine', 0.08);
+        });
+
+        cancelPlacementBtn.addEventListener('click', () => {
+            state.pendingPlacement = null;
+            placementPanel.classList.add('hidden');
+            sfx.playTone(300, 'sine', 0.1);
+        });
+
+        refreshShopBtn.addEventListener('click', () => {
+            if (state.gold >= 10) {
+                state.gold -= 10;
+                updateResourceDisplay();
+                refreshShop();
+                sfx.coin();
+            } else {
+                sfx.playTone(180, 'sawtooth', 0.15);
+            }
+        });
+
+        // --- 6. 修士屬性與面板數值更新 ---
+
+        // 計算目前儲物袋中已完整集齊的秘技（members 內的每一種法寶都至少裝備一件）
+        function getActiveSets() {
+            const equippedLibraryIds = new Set(state.equippedItems.map(i => i.libraryId));
+            return Object.entries(SET_LIBRARY)
+                .filter(([, setDef]) => setDef.members.every(memberId => equippedLibraryIds.has(memberId)))
+                .map(([setId, setDef]) => ({ setId, ...setDef }));
+        }
+
+        function renderSetBonusList(activeSets) {
+            const activeIds = new Set(activeSets.map(s => s.setId));
+            setBonusList.innerHTML = '';
+
+            Object.entries(SET_LIBRARY).forEach(([setId, setDef]) => {
+                const isActive = activeIds.has(setId);
+                const memberNames = setDef.members.map(m => `${EQUIPMENT_LIBRARY[m].emoji}${EQUIPMENT_LIBRARY[m].name}`).join(' + ');
+                const bonusText = formatBonusText(setDef.bonus);
+
+                const row = document.createElement('div');
+                row.className = `flex justify-between items-center p-1.5 rounded-lg border text-[10px] transition-colors duration-200 ${
+                    isActive ? 'bg-amber-950/50 border-amber-700' : 'bg-slate-950/60 border-slate-800'
+                }`;
+                row.innerHTML = `
+                    <div class="flex flex-col">
+                        <span class="font-bold ${isActive ? 'text-amber-300' : 'text-slate-400'}">${setDef.icon} ${setDef.name}${isActive ? ' ✅' : ''}</span>
+                        <span class="text-slate-500">${memberNames}</span>
+                    </div>
+                    <span class="font-mono font-bold ${isActive ? 'text-yellow-300' : 'text-slate-600'}">${bonusText}</span>
+                `;
+                setBonusList.appendChild(row);
+            });
+        }
+
+        function renderActiveSetBanner(activeSets) {
+            if (activeSets.length === 0) {
+                activeSetBanner.classList.add('hidden');
+                return;
+            }
+            activeSetBanner.classList.remove('hidden');
+            activeSetName.textContent = activeSets.map(s => s.name).join('、');
+        }
+
+        function recalculateHeroStats() {
+            let addAtk = 0;
+            let addHp = 0;
+            let addMagic = 0;
+            let addAspd = 0.0;
+
+            // 1. 統計基礎法寶加成
+            state.equippedItems.forEach(item => {
+                addAtk += item.atk || 0;
+                addHp += item.hp || 0;
+                addMagic += item.magic || 0;
+                addAspd += item.aspd || 0;
+            });
+
+            // 2. 套用已集齊的套裝加成
+            const activeSets = getActiveSets();
+            activeSets.forEach(setDef => {
+                addAtk += setDef.bonus.atk || 0;
+                addHp += setDef.bonus.hp || 0;
+                addMagic += setDef.bonus.magic || 0;
+                addAspd += setDef.bonus.aspd || 0;
+            });
+
+            state.hero.maxHp = 200 + addHp;
+            if (state.hero.hp > state.hero.maxHp) {
+                state.hero.hp = state.hero.maxHp;
+            }
+            state.hero.baseAtk = 10 + addAtk;
+            state.hero.baseMagic = 0 + addMagic;
+            state.hero.baseAspd = Math.max(0.4, 1.0 + addAspd);
+
+            statHp.textContent = `${Math.round(state.hero.hp)}/${state.hero.maxHp}`;
+            statAtk.textContent = state.hero.baseAtk;
+            statMagic.textContent = state.hero.baseMagic;
+            statAspd.textContent = `${state.hero.baseAspd.toFixed(2)}x`;
+
+            renderSetBonusList(activeSets);
+            renderActiveSetBanner(activeSets);
+        }
+
+        function updateResourceDisplay() {
+            goldDisplay.textContent = state.gold;
+            gemDisplay.textContent = state.gems;
+            waveDisplay.textContent = `渡劫 第${state.wave}重`;
+            
+            const progressPercent = (state.monstersDefeatedThisWave / state.monstersRequiredForNextWave) * 100;
+            waveProgress.style.width = `${progressPercent}%`;
+            waveProgressText.textContent = `${state.monstersDefeatedThisWave}/${state.monstersRequiredForNextWave}`;
+
+            renderShop();
+        }
+
+        // --- 6.1 本地端存讀檔系統 (JSON 匯出 / 匯入) ---
+        const SAVE_VERSION = 2;
+
+        function buildSaveData() {
+            return {
+                saveVersion: SAVE_VERSION,
+                savedAt: new Date().toISOString(),
+                gold: state.gold,
+                gems: state.gems,
+                wave: state.wave,
+                monstersDefeatedThisWave: state.monstersDefeatedThisWave,
+                monstersRequiredForNextWave: state.monstersRequiredForNextWave,
+                hero: {
+                    hp: state.hero.hp,
+                    maxHp: state.hero.maxHp,
+                    baseAtk: state.hero.baseAtk,
+                    baseMagic: state.hero.baseMagic,
+                    baseAspd: state.hero.baseAspd
+                },
+                equippedItems: state.equippedItems.map(item => ({ ...item })),
+                shopItems: state.shopItems.map(item => ({ ...item }))
+            };
+        }
+
+        function exportSaveData() {
+            try {
+                const data = buildSaveData();
+                const json = JSON.stringify(data, null, 2);
+                const blob = new Blob([json], { type: 'application/json' });
+                const url = URL.createObjectURL(blob);
+
+                const ts = new Date();
+                const pad = n => String(n).padStart(2, '0');
+                const filename = `凡人修仙路_存檔_W${state.wave}_${ts.getFullYear()}${pad(ts.getMonth() + 1)}${pad(ts.getDate())}_${pad(ts.getHours())}${pad(ts.getMinutes())}.json`;
+
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = filename;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+
+                sfx.coin();
+            } catch (err) {
+                console.error('匯出存檔失敗', err);
+                showModal('⚠️', '匯出失敗', '無法產生存檔檔案，請稍後再試一次。', '知道了', hideModal);
+            }
+        }
+
+        function validateSaveData(data) {
+            if (!data || typeof data !== 'object') return false;
+            if (typeof data.gold !== 'number' || typeof data.gems !== 'number') return false;
+            if (typeof data.wave !== 'number') return false;
+            if (!data.hero || typeof data.hero !== 'object') return false;
+            if (!Array.isArray(data.equippedItems)) return false;
+            return true;
+        }
+
+        function applySaveData(data) {
+            // 匯入前先清空即時戰場資料，避免殘留妖獸/特效造成畫面錯亂
+            state.monsters = [];
+            state.projectiles = [];
+            state.particles = [];
+            state.floatingTexts = [];
+            state.pendingPlacement = null;
+            placementPanel.classList.add('hidden');
+
+            state.gold = Math.max(0, Math.floor(data.gold));
+            state.gems = Math.max(0, Math.floor(data.gems));
+            state.wave = Math.max(1, Math.floor(data.wave));
+            state.monstersDefeatedThisWave = Math.max(0, Math.floor(data.monstersDefeatedThisWave || 0));
+            state.monstersRequiredForNextWave = Math.max(1, Math.floor(data.monstersRequiredForNextWave || (10 + state.wave * 2)));
+
+            state.hero.hp = typeof data.hero.hp === 'number' ? data.hero.hp : 200;
+            state.hero.maxHp = typeof data.hero.maxHp === 'number' ? data.hero.maxHp : 200;
+            state.hero.baseAtk = typeof data.hero.baseAtk === 'number' ? data.hero.baseAtk : 10;
+            state.hero.baseMagic = typeof data.hero.baseMagic === 'number' ? data.hero.baseMagic : 0;
+            state.hero.baseAspd = typeof data.hero.baseAspd === 'number' ? data.hero.baseAspd : 1.0;
+
+            // 依還原的法寶清單重建儲物袋格線，不直接信任存檔內的座標，逐一檢查合法性避免格線錯位
+            state.grid = Array(GRID_ROWS).fill(null).map(() => Array(GRID_COLS).fill(null));
+            state.equippedItems = [];
+
+            (data.equippedItems || []).forEach(item => {
+                const r = item.r, c = item.c, w = item.w, h = item.h;
+                if (
+                    typeof r !== 'number' || typeof c !== 'number' ||
+                    typeof w !== 'number' || typeof h !== 'number' ||
+                    r < 0 || c < 0 || w < 1 || h < 1 ||
+                    r + h > GRID_ROWS || c + w > GRID_COLS ||
+                    !checkFit(r, c, w, h)
+                ) {
+                    return; // 跳過座標不合法或重疊的殘缺資料
+                }
+
+                const restored = {
+                    instanceId: item.instanceId || ('item_' + Date.now() + '_' + Math.random().toString(36).substr(2, 5)),
+                    libraryId: item.libraryId || 'custom_forge',
+                    name: item.name || '未知法寶',
+                    emoji: item.emoji || '❔',
+                    color: item.color || 'bg-slate-700',
+                    r, c, w, h,
+                    atk: item.atk || 0,
+                    hp: item.hp || 0,
+                    magic: item.magic || 0,
+                    aspd: item.aspd || 0,
+                    cost: item.cost || 0
+                };
+
+                for (let currR = r; currR < r + h; currR++) {
+                    for (let currC = c; currC < c + w; currC++) {
+                        state.grid[currR][currC] = restored;
+                    }
+                }
+                state.equippedItems.push(restored);
+            });
+
+            if (Array.isArray(data.shopItems) && data.shopItems.length > 0) {
+                state.shopItems = data.shopItems;
+                renderShop();
+            } else {
+                refreshShop();
+            }
+
+            renderEquippedItems();
+            recalculateHeroStats();
+            updateResourceDisplay();
+        }
+
+        function importSaveData(file) {
+            if (!file) return;
+            const reader = new FileReader();
+
+            reader.onload = (e) => {
+                try {
+                    const data = JSON.parse(e.target.result);
+                    if (!validateSaveData(data)) {
+                        throw new Error('存檔格式不正確');
+                    }
+                    applySaveData(data);
+                    sfx.playTone(659.25, 'sine', 0.15);
+                    showModal('✅', '匯入成功', `已成功接續第 ${state.wave} 重渡劫的修行紀錄，儲物袋法寶與靈石均已恢復！`, '繼續修行', hideModal);
+                } catch (err) {
+                    console.error('匯入存檔失敗', err);
+                    sfx.playTone(180, 'sawtooth', 0.2);
+                    showModal('⚠️', '匯入失敗', '這份 JSON 檔案格式不正確或已損毀，請確認後再試一次。', '知道了', hideModal);
+                }
+            };
+            reader.onerror = () => {
+                showModal('⚠️', '匯入失敗', '讀取檔案時發生錯誤，請重新選擇檔案。', '知道了', hideModal);
+            };
+            reader.readAsText(file);
+        }
+
+        exportSaveBtn.addEventListener('click', exportSaveData);
+        importSaveBtn.addEventListener('click', () => importFileInput.click());
+        importFileInput.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            importSaveData(file);
+            importFileInput.value = '';
+        });
+
+        // --- 7. Canvas 2.5D 水平透視模擬引擎 ---
+        const canvas = document.getElementById('battle-canvas');
+        const ctx = canvas.getContext('2d');
+
+        function resizeCanvas() {
+            const rect = canvas.getBoundingClientRect();
+            canvas.width = rect.width * window.devicePixelRatio;
+            canvas.height = rect.height * window.devicePixelRatio;
+            ctx.scale(window.devicePixelRatio, window.devicePixelRatio);
+        }
+        window.addEventListener('resize', resizeCanvas);
+        resizeCanvas();
+
+        function worldToScreen(d, offset = 0) {
+            const w = canvas.width / window.devicePixelRatio;
+            const h = canvas.height / window.devicePixelRatio;
+            
+            const Y_TOP = h * 0.48;     
+            const Y_BOTTOM = h * 0.84;  
+            const Y_MID = (Y_TOP + Y_BOTTOM) / 2;
+            
+            const normY = (offset + 1) / 2; 
+            const scale = 0.65 + 0.75 * normY; 
+            
+            const y = Y_MID + offset * ((Y_BOTTOM - Y_TOP) / 2);
+            const x = w / 2 + (d - 0.5) * (w - 50) * (0.82 + 0.28 * offset);
+            
+            return { x, y, scale };
+        }
+
+        // 飄字與粒子產生器
+        function spawnFloatingText(text, x, y, color = '#ff3333', size = 11) {
+            state.floatingTexts.push({
+                text: text,
+                x: x,
+                y: y,
+                vx: (Math.random() - 0.5) * 1.5,
+                vy: -1.2 - Math.random() * 1.2,
+                alpha: 1,
+                color: color,
+                size: size
+            });
+        }
+
+        function spawnParticles(x, y, color, count = 8) {
+            for (let i = 0; i < count; i++) {
+                state.particles.push({
+                    x: x,
+                    y: y,
+                    vx: (Math.random() - 0.5) * 3,
+                    vy: (Math.random() - 0.5) * 3,
+                    radius: Math.random() * 2.5 + 0.8,
+                    color: color,
+                    alpha: 1,
+                    life: 1.0,
+                    decay: 0.02 + Math.random() * 0.03
+                });
+            }
+        }
+
+        // --- 7.1 水平戰鬥單位動態邏輯 ---
+        let lastMonsterSpawnTime = 0;
+        function handleMonsterSpawning(timestamp) {
+            if (state.monstersDefeatedThisWave >= state.monstersRequiredForNextWave) return;
+
+            const spawnInterval = Math.max(800, 2600 - state.wave * 120);
+            if (timestamp - lastMonsterSpawnTime > spawnInterval) {
+                if (state.monsters.length < 6) {
+                    const isBoss = (state.monstersDefeatedThisWave + state.monsters.length + 1) === state.monstersRequiredForNextWave;
+                    spawnMonster(isBoss);
+                    lastMonsterSpawnTime = timestamp;
+                }
+            }
+        }
+
+        function spawnMonster(isBoss = false) {
+            const scaleMultiplier = (isBoss ? 1.5 : 1.0) * 2;
+            const emojis = ['👾', '🕷️', '👹', '🦂', '🐉', '👻'];
+            const randomEmoji = isBoss ? '👑' : emojis[Math.floor(Math.random() * emojis.length)];
+            const spriteKey = isBoss ? 'boss' : MOB_EMOJI_TO_SPRITE[randomEmoji];
+            
+            const hp = (50 + state.wave * 40) * (isBoss ? 4.8 : 1.0);
+            state.monsters.push({
+                emoji: randomEmoji,
+                spriteKey: spriteKey,
+                d: 1.05, 
+                offset: (Math.random() - 0.5) * 1.6, 
+                speed: (0.12 + Math.random() * 0.15 + (state.wave * 0.005)) / (isBoss ? 1.4 : 1.0),
+                hp: hp,
+                maxHp: hp,
+                damage: (8 + state.wave * 3.5) * (isBoss ? 2.5 : 1.0),
+                isBoss: isBoss,
+                scaleMultiplier: scaleMultiplier,
+                hitFlash: 0
+            });
+        }
+
+        function triggerHeroAttacks(timestamp) {
+            const physicalCooldown = 1000 / state.hero.baseAspd;
+            if (timestamp - state.hero.lastAttackTime > physicalCooldown) {
+                if (state.monsters.length > 0) {
+                    sfx.shoot();
+                    const target = getNearestMonster();
+                    if (target) {
+                        state.projectiles.push({
+                            type: 'slash',
+                            startD: 0.15,
+                            targetD: target.d,
+                            startOffset: 0,
+                            targetOffset: target.offset,
+                            progress: 0,
+                            speed: 0.06 * state.hero.baseAspd,
+                            color: '#facc15',
+                            damage: state.hero.baseAtk
+                        });
+                        state.hero.lastAttackTime = timestamp;
+                    }
+                }
+            }
+
+            if (state.hero.baseMagic > 0) {
+                const magicCooldown = 1400;
+                if (timestamp - state.hero.lastMagicTime > magicCooldown) {
+                    const target = getNearestMonster();
+                    if (target) {
+                        sfx.magic();
+                        state.projectiles.push({
+                            type: 'magic',
+                            startD: 0.15,
+                            targetD: target.d,
+                            startOffset: 0,
+                            targetOffset: target.offset,
+                            progress: 0,
+                            speed: 0.04,
+                            color: '#a855f7',
+                            damage: state.hero.baseMagic
+                        });
+                        state.hero.lastMagicTime = timestamp;
+                    }
+                }
+            }
+        }
+
+        function getNearestMonster() {
+            let nearest = null;
+            let minD = 999;
+            state.monsters.forEach(m => {
+                if (m.d > 0.15 && m.d < minD) {
+                    minD = m.d;
+                    nearest = m;
+                }
+            });
+            return nearest;
+        }
+
+        // 繪製圖示總表中的單一圖示（優先使用真實圖片，載入完成前以 emoji 作為備援，避免畫面空白）
+        function drawSpriteIcon(cx, cy, size, spriteKey, fallbackEmoji, fallbackFontSize) {
+            const s = SPRITE_MAP[spriteKey];
+            if (s && spriteSheetImg.complete && spriteSheetImg.naturalWidth > 0) {
+                ctx.drawImage(spriteSheetImg, s.x, s.y, s.w, s.h, cx - size / 2, cy - size / 2, size, size);
+            } else if (fallbackEmoji) {
+                ctx.font = `${Math.round(fallbackFontSize)}px Arial`;
+                ctx.textAlign = 'center';
+                ctx.fillText(fallbackEmoji, cx, cy);
+            }
+        }
+
+        // 繪製樹林剪影（圓潤樹冠，可重複疊加不同深淺營造縱深感）
+        function drawTreeline(w, h, baseY, peakY, color, bumpCount) {
+            const bumpWidth = w / bumpCount;
+            ctx.fillStyle = color;
+            ctx.beginPath();
+            ctx.moveTo(0, baseY);
+            for (let i = 0; i < bumpCount; i++) {
+                const cx = i * bumpWidth + bumpWidth / 2;
+                const cy = peakY - (i % 3 === 1 ? bumpWidth * 0.25 : 0);
+                ctx.quadraticCurveTo(cx, cy, (i + 1) * bumpWidth, baseY);
+            }
+            ctx.lineTo(w, h * 0.8);
+            ctx.lineTo(0, h * 0.8);
+            ctx.closePath();
+            ctx.fill();
+        }
+
+        // --- 7.2 主渲染迴圈 ---
+        function updateAndRenderBattle(timestamp) {
+            const w = canvas.width / window.devicePixelRatio;
+            const h = canvas.height / window.devicePixelRatio;
+
+            ctx.clearRect(0, 0, w, h);
+            
+            // 1. 繪製背景藍天
+            ctx.fillStyle = '#bae6fd'; 
+            ctx.fillRect(0, 0, w, h);
+
+            const skyGrad = ctx.createLinearGradient(0, 0, 0, h * 0.4);
+            skyGrad.addColorStop(0, '#38bdf8');
+            skyGrad.addColorStop(1, '#bae6fd');
+            ctx.fillStyle = skyGrad;
+            ctx.fillRect(0, 0, w, h * 0.4);
+
+            // 遠景樹林剪影（雙層圓潤樹冠，營造森林縱深感）
+            // 較遠、較淺的樹林層
+            drawTreeline(w, h, h * 0.46, h * 0.34, '#1e7a45', 7);
+            // 較近、較深的樹林層
+            drawTreeline(w, h, h * 0.49, h * 0.40, '#166534', 9);
+
+            // 2. 草地網格
+            const Y_TOP = h * 0.48;
+            const Y_BOTTOM = h * 0.84;
+
+            ctx.fillStyle = '#4d7c0f'; 
+            ctx.fillRect(0, Y_TOP, w, Y_BOTTOM - Y_TOP);
+
+            ctx.strokeStyle = '#65a30d';
+            ctx.lineWidth = 1.2;
+            for (let offVal = -1.0; offVal <= 1.05; offVal += 0.25) {
+                const screenP = worldToScreen(0, offVal);
+                ctx.beginPath();
+                ctx.moveTo(0, screenP.y);
+                ctx.lineTo(w, screenP.y);
+                ctx.stroke();
+            }
+
+            for (let dVal = -0.2; dVal <= 1.2; dVal += 0.1) {
+                const farPoint = worldToScreen(dVal, -1.0);
+                const nearPoint = worldToScreen(dVal, 1.0);
+                ctx.beginPath();
+                ctx.moveTo(farPoint.x, farPoint.y);
+                ctx.lineTo(nearPoint.x, nearPoint.y);
+                ctx.stroke();
+            }
+
+            ctx.strokeStyle = '#365314'; 
+            ctx.lineWidth = 3;
+            ctx.beginPath();
+            ctx.moveTo(0, Y_TOP);
+            ctx.lineTo(w, Y_TOP);
+            ctx.stroke();
+
+            ctx.strokeStyle = '#422006';
+            ctx.beginPath();
+            ctx.moveTo(0, Y_BOTTOM);
+            ctx.lineTo(w, Y_BOTTOM);
+            ctx.stroke();
+
+            // 3. Y-SORTING
+            const renderQueue = [];
+
+            const pillarPositions = [0.1, 0.4, 0.7, 1.0];
+            pillarPositions.forEach(dVal => {
+                const pTop = worldToScreen(dVal, -1.1);
+                renderQueue.push({
+                    y: pTop.y,
+                    render: () => {
+                        const wP = 12 * pTop.scale;
+                        const hP = 55 * pTop.scale;
+                        ctx.fillStyle = 'rgba(0,0,0,0.45)';
+                        ctx.beginPath();
+                        ctx.ellipse(pTop.x, pTop.y, wP * 1.2, wP * 0.4, 0, 0, Math.PI * 2);
+                        ctx.fill();
+                        ctx.fillStyle = '#6b4226';
+                        ctx.fillRect(pTop.x - wP/2, pTop.y - hP, wP, hP);
+                        ctx.fillStyle = '#92613a';
+                        ctx.fillRect(pTop.x - wP/2, pTop.y - hP, wP * 0.3, hP);
+                        ctx.font = `${Math.round(16 * pTop.scale)}px Arial`;
+                        ctx.fillText('🌲', pTop.x, pTop.y - hP - 4);
+                    }
+                });
+
+                const pBot = worldToScreen(dVal, 1.1);
+                renderQueue.push({
+                    y: pBot.y,
+                    render: () => {
+                        const wP = 16 * pBot.scale;
+                        const hP = 70 * pBot.scale;
+                        ctx.fillStyle = 'rgba(0,0,0,0.5)';
+                        ctx.beginPath();
+                        ctx.ellipse(pBot.x, pBot.y, wP * 1.2, wP * 0.4, 0, 0, Math.PI * 2);
+                        ctx.fill();
+                        ctx.fillStyle = '#4a2f1c';
+                        ctx.fillRect(pBot.x - wP/2, pBot.y - hP, wP, hP);
+                        ctx.fillStyle = '#6b4226';
+                        ctx.fillRect(pBot.x - wP/2, pBot.y - hP, wP * 0.35, hP);
+                    }
+                });
+            });
+
+            // 主角修士
+            const pHero = worldToScreen(0.15, 0);
+            renderQueue.push({
+                y: pHero.y,
+                render: () => {
+                    ctx.fillStyle = 'rgba(0,0,0,0.5)';
+                    ctx.beginPath();
+                    ctx.ellipse(pHero.x, pHero.y, 18 * pHero.scale, 7 * pHero.scale, 0, 0, Math.PI * 2);
+                    ctx.fill();
+
+                    const heroSize = 40 * pHero.scale;
+                    drawSpriteIcon(pHero.x, pHero.y - 22 * pHero.scale, heroSize, 'hero', '🧙‍♂️', 34 * pHero.scale);
+
+                    // 武器圍繞（精靈劍士天生佩劍，故佩劍圖示恆常顯示）
+                    const hasStaff = state.equippedItems.some(i => i.libraryId === 'staff' || i.magic > 15);
+                    const hasArmor = state.equippedItems.some(i => i.libraryId === 'armor' || i.hp > 100);
+
+                    const timeAngle = timestamp / 750;
+                    ctx.textAlign = 'center';
+                    ctx.font = `${Math.round(15 * pHero.scale)}px Arial`;
+
+                    const sx = pHero.x + Math.cos(timeAngle) * 30 * pHero.scale;
+                    const sy = pHero.y - 18 * pHero.scale + Math.sin(timeAngle) * 10 * pHero.scale;
+                    ctx.fillText('🗡️', sx, sy);
+                    if (hasStaff) {
+                        const mx = pHero.x + Math.cos(timeAngle + Math.PI * 0.7) * 30 * pHero.scale;
+                        const my = pHero.y - 18 * pHero.scale + Math.sin(timeAngle + Math.PI * 0.7) * 10 * pHero.scale;
+                        ctx.fillText('⚡', mx, my);
+                    }
+                    if (hasArmor) {
+                        const ax = pHero.x + Math.cos(timeAngle + Math.PI * 1.4) * 30 * pHero.scale;
+                        const ay = pHero.y - 18 * pHero.scale + Math.sin(timeAngle + Math.PI * 1.4) * 10 * pHero.scale;
+                        ctx.fillText('🛡️', ax, ay);
+                    }
+                }
+            });
+
+            // 推進與繪製妖獸
+            handleMonsterSpawning(timestamp);
+            triggerHeroAttacks(timestamp);
+
+            for (let i = state.monsters.length - 1; i >= 0; i--) {
+                const m = state.monsters[i];
+                
+                if (m.d > 0.18) {
+                    m.d -= m.speed * 0.0032;
+                } else {
+                    state.hero.hp -= m.damage / 60;
+                    statHp.textContent = `${Math.round(state.hero.hp)}/${state.hero.maxHp}`;
+                    
+                    if (state.hero.hp <= 0) {
+                        handleGameOver();
+                    }
+                }
+
+                const pMon = worldToScreen(m.d, m.offset);
+                m.currentX = pMon.x;
+                m.currentY = pMon.y;
+                m.currentScale = pMon.scale * m.scaleMultiplier;
+
+                if (m.hitFlash > 0) {
+                    m.hitFlash--;
+                }
+
+                renderQueue.push({
+                    y: pMon.y,
+                    render: () => {
+                        ctx.fillStyle = 'rgba(0,0,0,0.45)';
+                        ctx.beginPath();
+                        ctx.ellipse(pMon.x, pMon.y, 14 * m.currentScale, 5 * m.currentScale, 0, 0, Math.PI * 2);
+                        ctx.fill();
+
+                        ctx.save();
+                        if (m.hitFlash > 0) {
+                            ctx.shadowColor = '#ffffff';
+                            ctx.shadowBlur = 18;
+                        }
+                        const mobSize = 34 * m.currentScale;
+                        drawSpriteIcon(pMon.x, pMon.y - 17.8 * m.currentScale, mobSize, m.spriteKey, m.emoji, 28 * m.currentScale);
+                        ctx.restore();
+
+                        const mHpW = 26 * m.currentScale;
+                        ctx.fillStyle = '#1e293b';
+                        ctx.fillRect(pMon.x - mHpW/2, pMon.y - 32 * m.currentScale, mHpW, 3.5);
+                        ctx.fillStyle = '#a855f7';
+                        ctx.fillRect(pMon.x - mHpW/2, pMon.y - 32 * m.currentScale, mHpW * (m.hp / m.maxHp), 3.5);
+                    }
+                });
+
+                if (m.hp <= 0) {
+                    spawnParticles(pMon.x, pMon.y - 12 * m.currentScale, '#ec4899', 14);
+                    sfx.hit();
+
+                    let goldEarned = m.isBoss ? 45 : 12;
+                    let coinMultiplier = 1.0;
+                    state.equippedItems.forEach(item => {
+                        if (item.libraryId === 'chest') coinMultiplier += 0.25;
+                    });
+                    const finalReward = Math.round(goldEarned * coinMultiplier);
+                    state.gold += finalReward;
+                    
+                    if (m.isBoss) {
+                        state.gems += 1;
+                    }
+
+                    state.monstersDefeatedThisWave++;
+                    state.monsters.splice(i, 1);
+                    
+                    updateResourceDisplay();
+                    spawnFloatingText(`+🪙${finalReward}`, pMon.x, pMon.y - 35, '#eab308', 13);
+
+                    if (state.monstersDefeatedThisWave >= state.monstersRequiredForNextWave) {
+                        handleWaveCleared();
+                    }
+                }
+            }
+
+            renderQueue.sort((a, b) => a.y - b.y);
+            renderQueue.forEach(item => item.render());
+
+            // 4. 飛彈
+            for (let i = state.projectiles.length - 1; i >= 0; i--) {
+                const p = state.projectiles[i];
+                p.progress += p.speed;
+
+                const currD = p.startD + (p.targetD - p.startD) * p.progress;
+                const currOffset = p.startOffset + (p.targetOffset - p.startOffset) * p.progress;
+                const pLoc = worldToScreen(currD, currOffset);
+                
+                const arcHeight = Math.sin(p.progress * Math.PI) * 45 * pLoc.scale;
+                const renderY = pLoc.y - 10 * pLoc.scale - arcHeight;
+
+                ctx.save();
+                if (p.type === 'slash') {
+                    ctx.strokeStyle = p.color;
+                    ctx.lineWidth = 4 * pLoc.scale;
+                    ctx.lineCap = 'round';
+                    ctx.shadowColor = p.color;
+                    ctx.shadowBlur = 8;
+                    ctx.beginPath();
+                    ctx.arc(pLoc.x, renderY, 12 * pLoc.scale, -Math.PI/4, Math.PI/4);
+                    ctx.stroke();
+                } else if (p.type === 'magic') {
+                    ctx.fillStyle = p.color;
+                    ctx.shadowColor = p.color;
+                    ctx.shadowBlur = 12;
+                    ctx.beginPath();
+                    ctx.arc(pLoc.x, renderY, 7 * pLoc.scale, 0, Math.PI * 2);
+                    ctx.fill();
+                }
+                ctx.restore();
+
+                if (p.progress >= 1.0) {
+                    if (state.monsters.length > 0) {
+                        const target = getNearestMonster();
+                        if (target) {
+                            target.hp -= p.damage;
+                            target.hitFlash = 5;
+                            spawnParticles(pLoc.x, renderY, p.color, 8);
+                            spawnFloatingText(`-${Math.round(p.damage)}`, pLoc.x, renderY - 10, p.type === 'magic' ? '#c084fc' : '#f87171', 12);
+                        }
+                    }
+                    state.projectiles.splice(i, 1);
+                }
+            }
+
+            // 5. 特效與字體
+            for (let i = state.particles.length - 1; i >= 0; i--) {
+                const pt = state.particles[i];
+                pt.x += pt.vx;
+                pt.y += pt.vy;
+                pt.life -= pt.decay;
+                
+                ctx.save();
+                ctx.globalAlpha = pt.life;
+                ctx.fillStyle = pt.color;
+                ctx.beginPath();
+                ctx.arc(pt.x, pt.y, pt.radius, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.restore();
+
+                if (pt.life <= 0) {
+                    state.particles.splice(i, 1);
+                }
+            }
+
+            for (let i = state.floatingTexts.length - 1; i >= 0; i--) {
+                const ft = state.floatingTexts[i];
+                ft.x += ft.vx;
+                ft.y += ft.vy;
+                ft.alpha -= 0.022;
+
+                ctx.save();
+                ctx.globalAlpha = ft.alpha;
+                ctx.font = `bold ${ft.size}px Impact, Arial`;
+                ctx.textAlign = 'center';
+                
+                ctx.strokeStyle = '#000000';
+                ctx.lineWidth = 3;
+                ctx.strokeText(ft.text, ft.x, ft.y);
+                
+                ctx.fillStyle = ft.color;
+                ctx.fillText(ft.text, ft.x, ft.y);
+                ctx.restore();
+
+                if (ft.alpha <= 0) {
+                    state.floatingTexts.splice(i, 1);
+                }
+            }
+
+            requestAnimationFrame(updateAndRenderBattle);
+        }
+
+        // --- 8. 遊戲流程控制 ---
+
+        function handleWaveCleared() {
+            sfx.playTone(523.25, 'sine', 0.15);
+            setTimeout(() => sfx.playTone(659.25, 'sine', 0.15), 100);
+            setTimeout(() => sfx.playTone(783.99, 'sine', 0.3), 200);
+
+            showModal(
+                '🏆', 
+                `第 ${state.wave} 重天劫已渡過`, 
+                `渡劫成功！獲得獎勵：妖丹x2。調整儲物袋法寶陣型、悟通秘技加成，以挺進下一重天劫！`, 
+                '準備渡下一劫', 
+                () => {
+                    state.wave++;
+                    state.gems += 2;
+                    state.monstersDefeatedThisWave = 0;
+                    state.monstersRequiredForNextWave = 10 + state.wave * 2;
+                    state.hero.hp = state.hero.maxHp;
+                    
+                    updateResourceDisplay();
+                    recalculateHeroStats();
+                    refreshShop();
+                    hideModal();
+                }
+            );
+        }
+
+        function handleGameOver() {
+            sfx.defeat();
+
+            showModal(
+                '💀', 
+                '道基崩潰，走火入魔！', 
+                `道友在第 ${state.wave} 重天劫中失手，道基受損。請重新整備儲物袋法寶、悟通秘技來扭轉戰局！`, 
+                '重新凝聚道基', 
+                () => {
+                    state.hero.hp = state.hero.maxHp;
+                    state.monstersDefeatedThisWave = 0;
+                    state.monsters = [];
+                    state.projectiles = [];
+                    state.gold += 50; 
+
+                    updateResourceDisplay();
+                    recalculateHeroStats();
+                    hideModal();
+                }
+            );
+        }
+
+        function showModal(icon, title, desc, btnText, callback) {
+            modalIcon.textContent = icon;
+            modalTitle.textContent = title;
+            modalDesc.textContent = desc;
+            modalBtn.textContent = btnText;
+            
+            modalBtn.onclick = callback;
+            customModal.classList.remove('hidden');
+        }
+
+        function hideModal() {
+            customModal.classList.add('hidden');
+        }
+
+        soundToggle.addEventListener('click', () => {
+            sfx.enabled = !sfx.enabled;
+            soundToggle.textContent = sfx.enabled ? '🔊' : '🔇';
+        });
+
+        // --- 9. 初始化啟動點 ---
+        window.onload = function() {
+            initGridDOM();
+            refreshShop();
+            updateResourceDisplay();
+            recalculateHeroStats();
+
+            requestAnimationFrame(updateAndRenderBattle);
+        };
+
+    </script>
+</body>
+</html>
