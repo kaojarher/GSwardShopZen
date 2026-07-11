@@ -108,28 +108,6 @@
             </div>
         </div>
 
-        <!-- 📜 秘技總覽 -->
-        <div class="bg-slate-900 rounded-xl p-3 border-2 border-amber-900/60 flex flex-col space-y-2 relative overflow-hidden shadow-md">
-            <!-- 發光霓虹裝飾 -->
-            <div class="absolute -right-8 -top-8 w-16 h-16 bg-amber-600/10 blur-xl rounded-full"></div>
-
-            <div class="flex justify-between items-center">
-                <span class="text-xs font-black text-amber-300 flex items-center space-x-1">
-                    <span>📜</span><span>秘技總覽</span>
-                </span>
-                <span class="text-[9px] bg-amber-950 text-amber-400 border border-amber-800 px-2 py-0.5 rounded-full font-mono font-bold tracking-wider">
-                    劍訣秘法
-                </span>
-            </div>
-            <p class="text-[10px] text-slate-400 leading-relaxed">
-                將對應法寶湊齊放入儲物袋，即可自動悟通秘技加成，效果會持續生效，直到卸下任一件法寶為止。
-            </p>
-
-            <div id="set-bonus-list" class="space-y-1.5">
-                <!-- JS 動態渲染秘技清單 -->
-            </div>
-        </div>
-
         <!-- 放置格線儲物袋區域 -->
         <div class="bg-slate-900 rounded-xl p-3 border-2 border-slate-800/80 relative flex flex-col">
             <div class="flex justify-between items-center mb-2">
@@ -172,6 +150,28 @@
                 <button id="cancel-placement-btn" class="bg-slate-800 hover:bg-slate-700 text-slate-300 px-3 py-1.5 rounded text-xs">
                     取消
                 </button>
+            </div>
+        </div>
+
+        <!-- 📜 秘技總覽（依需求移至乾坤儲物袋下方） -->
+        <div class="bg-slate-900 rounded-xl p-3 border-2 border-amber-900/60 flex flex-col space-y-2 relative overflow-hidden shadow-md">
+            <!-- 發光霓虹裝飾 -->
+            <div class="absolute -right-8 -top-8 w-16 h-16 bg-amber-600/10 blur-xl rounded-full"></div>
+
+            <div class="flex justify-between items-center">
+                <span class="text-xs font-black text-amber-300 flex items-center space-x-1">
+                    <span>📜</span><span>秘技總覽</span>
+                </span>
+                <span class="text-[9px] bg-amber-950 text-amber-400 border border-amber-800 px-2 py-0.5 rounded-full font-mono font-bold tracking-wider">
+                    劍訣秘法
+                </span>
+            </div>
+            <p class="text-[10px] text-slate-400 leading-relaxed">
+                將對應法寶湊齊放入儲物袋，即可自動悟通秘技加成，效果會持續生效，直到卸下任一件法寶為止。
+            </p>
+
+            <div id="set-bonus-list" class="space-y-1.5">
+                <!-- JS 動態渲染秘技清單 -->
             </div>
         </div>
 
