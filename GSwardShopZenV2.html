@@ -134,6 +134,21 @@
             </div>
         </div>
 
+        <!-- 坊市法寶閣（依需求移至乾坤儲物袋下方） -->
+        <div class="bg-slate-900 rounded-xl p-3 border-2 border-slate-800/80 flex flex-col space-y-2">
+            <div class="flex justify-between items-center">
+                <span class="text-xs font-bold text-slate-300">🛒 坊市法寶閣</span>
+                <button id="refresh-shop-btn" class="text-[10px] bg-amber-950/80 hover:bg-amber-900 text-amber-300 px-2.5 py-1 rounded border border-amber-800 flex items-center space-x-1">
+                    <span>🔄 刷新坊市 (🪙10)</span>
+                </button>
+            </div>
+            
+            <!-- 商品卡片列表 -->
+            <div id="shop-items-container" class="grid grid-cols-3 gap-2">
+                <!-- JS 動態渲染坊市法寶 -->
+            </div>
+        </div>
+
         <!-- 擺放控制與提示區域 -->
         <div id="placement-control-panel" class="hidden bg-purple-950/40 border border-purple-800/60 p-2 rounded-lg flex justify-between items-center">
             <div class="flex items-center space-x-2">
@@ -172,21 +187,6 @@
 
             <div id="set-bonus-list" class="space-y-1.5">
                 <!-- JS 動態渲染秘技清單 -->
-            </div>
-        </div>
-
-        <!-- 坊市法寶閣 -->
-        <div class="bg-slate-900 rounded-xl p-3 border-2 border-slate-800/80 flex flex-col space-y-2">
-            <div class="flex justify-between items-center">
-                <span class="text-xs font-bold text-slate-300">🛒 坊市法寶閣</span>
-                <button id="refresh-shop-btn" class="text-[10px] bg-amber-950/80 hover:bg-amber-900 text-amber-300 px-2.5 py-1 rounded border border-amber-800 flex items-center space-x-1">
-                    <span>🔄 刷新坊市 (🪙10)</span>
-                </button>
-            </div>
-            
-            <!-- 商品卡片列表 -->
-            <div id="shop-items-container" class="grid grid-cols-3 gap-2">
-                <!-- JS 動態渲染坊市法寶 -->
             </div>
         </div>
 
